@@ -1,0 +1,42 @@
+using System.Collections.Generic;
+using System.IO;
+using UnityEngine;
+
+namespace BallSortPuzzle.SaveSystem
+{
+    [System.Serializable]
+    public class BGData
+    {
+        public string id;
+        public int price;
+        public bool unlocked;
+        public Sprite icon;
+        public Sprite bgSprite;
+    }
+
+
+    [CreateAssetMenu(fileName = "BG Data", menuName = "Ball Sort Puzzle/Data/BG Data")]
+    public class ItemBGData : ScriptableObject
+    {
+        public string fileName;
+        public List<BGData> datas;
+
+        #region Editor Helper
+        [ContextMenu("Reset Unlock Status")]
+        public void ResetStatus()
+        {
+            foreach (var item in datas)
+                item.unlocked = false;
+            datas[0].unlocked = true;
+        }
+
+        [ContextMenu("Delete File Data")]
+        public void DeleteFileData()
+        {
+            string path = Path.Combine(Application.persistentDataPath, fileName);
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        #endregion
+    }
+}
