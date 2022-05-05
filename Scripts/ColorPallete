@@ -1,0 +1,32 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace BallSortPuzzle
+{
+    [CreateAssetMenu(fileName = "Color Pallete", menuName = "Ball Sort Puzzle/Color Pallete")]
+    public class ColorPallete : ScriptableObject
+    {
+        [System.Serializable]
+        public class Pallete
+        {
+            public Color color;
+            public int index;
+        }
+
+        public List<Pallete> colorPalletes = new List<Pallete>();
+
+        public Color GetColorFromIndex(int index)
+        {
+            return colorPalletes[index].color;
+        }
+
+        private void OnValidate()
+        {
+            if (colorPalletes.Count > 0)
+            {
+                for (int i = 0; i < colorPalletes.Count; i++)
+                    colorPalletes[i].index = i;
+            }
+        }
+    }
+}
