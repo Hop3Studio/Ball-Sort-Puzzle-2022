@@ -1,0 +1,26 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace BallSortPuzzle
+{
+    using SaveSystem;
+    [CreateAssetMenu(fileName = "Level Container", menuName = "Ball Sort Puzzle/Level Container")]
+    public class LevelContainer : ScriptableObject
+    {
+        [SerializeField] private List<LevelData> levelDatas;
+
+        public LevelData GetLevel()
+        {
+            int index = SaveManager.Instance.GameData.levelIndex;
+            return levelDatas[index];
+        }
+
+        public void OnCompletedCurrentLevel()
+        {
+            int index = SaveManager.Instance.GameData.levelIndex;
+            index += 1;
+            SaveManager.Instance.GameData.levelIndex = index;
+        }
+    }
+}
