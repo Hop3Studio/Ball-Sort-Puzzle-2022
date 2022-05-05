@@ -1,0 +1,238 @@
+using UnityEngine;
+using UnityEditor;
+using System;
+
+namespace BallSortPuzzleEditor
+{
+    using BallSortPuzzle;
+    using BallSortPuzzle.Utilities;
+
+    [CanEditMultipleObjects()]
+    [CustomEditor(typeof(LevelData), false)]
+    public class LevelDataEditor : Editor
+    {
+        #region Field
+        private LevelData data;
+        private SerializedObject so;
+        private SerializedProperty levelNumber;
+        private SerializedProperty tubeAmount;
+        private SerializedProperty extraTube;
+        private SerializedProperty ballPerTube;
+        private SerializedProperty rewardAmount;
+        private SerializedProperty colorPallete;
+        private SerializedProperty tubeDatas;
+
+        //private bool preventGenerate = false, disabledButton = false;
+        private bool generalFoldout = true, settingFoldout = true, dataFoldout = false, showAsColor = true, showAnswer = false;
+        #endregion
+
+        #region Editor Function
+        private void OnEnable()
+        {
+            so = serializedObject;
+            data = so.targetObject as LevelData;
+
+            levelNumber = so.FindProperty("levelNumber");
+            tubeAmount = so.FindProperty("tubeAmount");
+            extraTube = so.FindProperty("extraTube");
+            ballPerTube = so.FindProperty("ballPerTube");
+            rewardAmount = so.FindProperty("rewardAmount");
+            colorPallete = so.FindProperty("colorPallete");
+            tubeDatas = so.FindProperty("tubeDatas");
+
+            if (tubeAmount.intValue > 0 && extraTube.intValue > 0 && ballPerTube.intValue > 0)
+                dataFoldout = true;
+            //
+            //if (extraTube.intValue == 1 || ballPerTube.intValue == 5)
+            //    preventGenerate = true;
+
+        }
+
+        public override void OnInspectorGUI()
+        {
+            so.Update();
+            DrawFoldoutArea("General Setting", ref generalFoldout, DrawGeneralSetting);
+            DrawFoldoutArea("Tube Setting", ref settingFoldout, DrawLevelSetting);
+            DrawFoldoutArea("Data Viewer", ref dataFoldout, DrawData);
+
+            so.ApplyModifiedProperties();
+        }
+        #endregion
+
+        #region Private Method
+        private void DrawFoldoutArea(string tittle, ref bool foldout, Action additionalInspectorGUI)
+        {
+            EditorGUILayout.Space(10);
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                Rect rect = EditorGUILayout.GetControlRect();
+                rect.x += 10;
+                rect.width -= 10;
+                rect.y -= 4;
+
+                foldout = EditorGUI.BeginFoldoutHeaderGroup(rect, foldout, tittle);
+                if (foldout)
+                    additionalInspectorGUI.Invoke();
+                EditorGUI.EndFoldoutHeaderGroup();
+            }
+        }
+
+        private void DrawGeneralSetting()
+        {
+            using (new EditorGUILayout.VerticalScope())
+            {
+                using (new EditorGUI.DisabledScope(true))
+                {
+                    EditorGUILayout.PropertyField(levelNumber);
+                }
+                EditorGUILayout.PropertyField(colorPallete);
+                EditorGUILayout.PropertyField(rewardAmount);
+            }
+        }
+
+        private void DrawLevelSetting()
+        {
+            using (new EditorGUILayout.VerticalScope())
+            {
+                EditorGUILayout.PropertyField(tubeAmount);
+                EditorGUILayout.PropertyField(extraTube);
+                EditorGUILayout.PropertyField(ballPerTube);
+
+                if (so.ApplyModifiedProperties())
+                {
+                    data.GenerateData();
+                    if (tubeAmount.intValue > 0 && extraTube.intValue > 0 && ballPerTube.intValue > 0)
+                        dataFoldout = true;
+
+                    //if (extraTube.intValue == 1 || ballPerTube.intValue == 5)
+                    //    preventGenerate = true;
+                    //else
+                    //    preventGenerate = false;
+                }
+
+            }
+        }
+
+        private void DrawData()
+        {
+            //preventGenerate = EditorGUILayout.Toggle("Prevent Random Generate", preventGenerate);
+            using (new EditorGUI.DisabledScope(tubeAmount.intValue <= 0 || ballPerTube.intValue <= 0))
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    if (GUILayout.Button("Generate Random"))
+                    {
+                        data.GenerateData();
+                        Repaint();
+                        EditorUtility.SetDirty(data);
+                    }
+
+                    ///using (new EditorGUI.DisabledScope(disabledButton == true))
+                    ///{
+                    ///    if (GUILayout.Button("Generate Random"))
+                    ///    {
+                    ///        if (ballPerTube.intValue == 5 || extraTube.intValue == 1)
+                    ///        {
+                    ///            int counter = 0;
+                    ///            while (counter < 50 && disabledButton == false)
+                    ///            {
+                    ///                data.GenerateData();
+                    ///                if (BallSolver.TrySolve(data, showAnswer))
+                    ///                {
+                    ///                    if (preventGenerate)
+                    ///                        disabledButton = true;
+                    ///                    Repaint();
+                    ///                    EditorUtility.SetDirty(data);
+                    ///                }
+                    ///                counter += 1;
+                    ///            }
+                    ///            Debug.Log(counter);
+                    ///        }
+                    ///        else
+                    ///        {
+                    ///            data.GenerateData();
+                    ///            if (BallSolver.TrySolve(data, showAnswer))
+                    ///            {
+                    ///                if (preventGenerate)
+                    ///                    disabledButton = true;
+                    ///                Repaint();
+                    ///                EditorUtility.SetDirty(data);
+                    ///            }
+                    ///        }
+                    ///    }
+                    ///}
+
+                    using (new EditorGUI.DisabledScope(colorPallete.objectReferenceValue == null))
+                    {
+                        if (GUILayout.Button("Show As Color"))
+                            showAsColor = !showAsColor;
+
+                        if (GUILayout.Button("Show Answer"))
+                            showAnswer = !showAnswer;
+                    }
+                }
+
+                using (new EditorGUI.DisabledScope(tubeDatas.arraySize <= 0))
+                {
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        if (GUILayout.Button("Check Validity"))
+                        {
+                            //data.CheckValidity();
+                        }
+
+                        if (GUILayout.Button("X"))
+                            tubeDatas.ClearArray();
+
+                        if (GUILayout.Button("Try Solve"))
+                        {
+                            //if (BallSolver.TrySolve(data, showAnswer))
+                            //{
+                            //    if (preventGenerate)
+                            //        disabledButton = true;
+                            //}
+                        }
+                    }
+                }
+
+                EditorGUILayout.Space(10f);
+                if (data.TubeDatas != null)
+                    DrawTubeData();
+            }
+        }
+
+        private void DrawTubeData()
+        {
+            if (extraTube.intValue == 1)
+                EditorGUILayout.HelpBox("TRY SOLVE BEFORE DO ANY OTHER THING!!!", MessageType.Warning);
+
+            if (showAsColor == false)
+            {
+                EditorGUILayout.HelpBox("If you modify data manually, make sure check validity before use it", MessageType.Info);
+            }
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                for (int i = 0; i < data.TubeDatas.Count; i++)
+                {
+                    using (new EditorGUILayout.VerticalScope())
+                    {
+                        if (showAsColor == false)
+                        {
+                            for (int j = data.TubeDatas[i].indexes.Count - 1; j >= 0; j--)
+                                data.TubeDatas[i].indexes[j] = EditorGUILayout.IntField(data.TubeDatas[i].indexes[j]);
+                        }
+                        else
+                        {
+                            using (new EditorGUI.DisabledScope(true))
+                            {
+                                for (int j = data.TubeDatas[i].indexes.Count - 1; j >= 0; j--)
+                                    EditorGUILayout.ColorField(data.ColorPallete.GetColorFromIndex(data.TubeDatas[i].indexes[j]));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        #endregion
+    }
+}
